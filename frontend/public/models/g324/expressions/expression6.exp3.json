@@ -1,0 +1,10 @@
+{
+	"Type": "Live2D Expression",
+	"Parameters": [
+		{
+			"Id": "Silly",
+			"Value": 1,
+			"Blend": "Add"
+		}
+	]
+}

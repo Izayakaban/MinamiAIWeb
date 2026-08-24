@@ -1,0 +1,24 @@
+{
+	"Version": 3,
+	"FileReferences": {
+		"Moc": "Meruru - Model - Mark.moc3",
+		"Textures": [
+			"Meruru - Model - Mark.4096/texture_00.png",
+			"Meruru - Model - Mark.4096/texture_01.png"
+		],
+		"Physics": "Meruru - Model - Mark.physics3.json",
+		"DisplayInfo": "Meruru - Model - Mark.cdi3.json"
+	},
+	"Groups": [
+		{
+			"Target": "Parameter",
+			"Name": "LipSync",
+			"Ids": []
+		},
+		{
+			"Target": "Parameter",
+			"Name": "EyeBlink",
+			"Ids": []
+		}
+	]
+}

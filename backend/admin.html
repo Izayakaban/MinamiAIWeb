@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>minami.memory // admin</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --base: #16112A;
+      --panel: #1F1840;
+      --surface: #2A2050;
+      --border: #3D3070;
+      --pink: #F2A7C3;
+      --lavender: #C4B0FF;
+      --blue: #90C8FF;
+      --text: #EEE8FF;
+      --muted: #8878BB;
+      --glow-pink: rgba(242,167,195,0.15);
+      --glow-lav: rgba(196,176,255,0.12);
+    }
+
+    body {
+      background: var(--base);
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Auth screen */
+    #auth-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--base);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .auth-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 44px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 380px;
+      box-shadow: 0 0 60px var(--glow-lav), 0 0 20px var(--glow-pink);
+    }
+
+    .auth-logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+
+    .auth-logo span { color: var(--pink); }
+
+    .auth-subtitle {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: -10px;
+    }
+
+    .auth-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      width: 100%;
+    }
+
+    .auth-input:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 3px var(--glow-pink);
+    }
+
+    .auth-btn {
+      background: linear-gradient(135deg, var(--pink), var(--lavender));
+      border: none;
+      border-radius: 8px;
+      padding: 11px;
+      color: #16112A;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      letter-spacing: 0.05em;
+    }
+
+    .auth-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .auth-error { color: #F28BA8; font-size: 11px; display: none; }
+
+    /* Title bar */
+    .title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0 20px;
+      height: 42px;
+      flex-shrink: 0;
+    }
+
+    .title-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-logo {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+
+    .title-logo span { color: var(--pink); }
+
+    .title-tag {
+      font-size: 10px;
+      color: var(--muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .title-right {
+      font-size: 10px;
+      color: var(--muted);
+      letter-spacing: 0.04em;
+    }
+
+    /* Tab bar */
+    .tab-bar {
+      display: flex;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      height: 36px;
+      flex-shrink: 0;
+      align-items: stretch;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 18px;
+      font-size: 11px;
+      color: var(--text);
+      background: var(--base);
+      border-right: 1px solid var(--border);
+      border-bottom: 2px solid var(--pink);
+    }
+
+    .tab span { color: var(--pink); }
+
+    /* Main layout */
+    #main {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+      flex-direction: column;
+    }
+
+    /* Toolbar */
+    .toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .toolbar-input:focus {
+      border-color: var(--lavender);
+      box-shadow: 0 0 0 2px var(--glow-lav);
+    }
+
+    .toolbar-input.wide { width: 200px; }
+    select.toolbar-input { cursor: pointer; }
+
+    .toolbar-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 12px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .toolbar-btn:hover { color: var(--text); border-color: var(--lavender); }
+
+    .toolbar-btn.primary {
+      background: linear-gradient(135deg, var(--pink), var(--lavender));
+      border: none;
+      color: #16112A;
+      font-weight: 700;
+    }
+
+    .toolbar-btn.primary:hover { opacity: 0.88; color: #16112A; }
+    .toolbar-btn.danger:hover { border-color: #F28BA8; color: #F28BA8; }
+
+    .toolbar-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    .summary {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* Table */
+    .table-wrap {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: var(--panel);
+      z-index: 2;
+    }
+
+    th {
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      font-weight: 400;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    th.sortable { cursor: pointer; user-select: none; }
+    th.sortable:hover { color: var(--lavender); }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(61,48,112,0.4);
+      vertical-align: top;
+    }
+
+    tr:hover td { background: rgba(196,176,255,0.04); }
+    tr.selected td { background: rgba(242,167,195,0.07); }
+
+    .content-cell {
+      max-width: 440px;
+      line-height: 1.6;
+      word-break: break-word;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .importance-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .imp-5 { background: rgba(242,167,195,0.18); color: var(--pink); border: 1px solid rgba(242,167,195,0.35); box-shadow: 0 0 8px rgba(242,167,195,0.2); }
+    .imp-4 { background: rgba(196,176,255,0.18); color: var(--lavender); border: 1px solid rgba(196,176,255,0.35); }
+    .imp-3 { background: rgba(144,200,255,0.15); color: var(--blue); border: 1px solid rgba(144,200,255,0.3); }
+    .imp-2 { background: rgba(136,120,187,0.15); color: var(--muted); border: 1px solid rgba(136,120,187,0.3); }
+    .imp-1 { background: rgba(61,48,112,0.4); color: var(--muted); border: 1px solid var(--border); }
+
+    .type-badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 5px;
+      font-size: 10px;
+      white-space: nowrap;
+      letter-spacing: 0.04em;
+    }
+
+    .type-user_fact {
+      background: rgba(196,176,255,0.12);
+      color: var(--lavender);
+      border: 1px solid rgba(196,176,255,0.25);
+    }
+
+    .type-minami_memory {
+      background: rgba(242,167,195,0.12);
+      color: var(--pink);
+      border: 1px solid rgba(242,167,195,0.25);
+    }
+
+    .date-cell { font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+    .expires-never { color: var(--pink); font-size: 10px; }
+    .expires-soon { color: #F2C94C; font-size: 10px; }
+    .expires-normal { color: var(--muted); font-size: 10px; }
+
+    .action-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 9px;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      margin-right: 4px;
+    }
+
+    .action-btn:hover { color: var(--lavender); border-color: var(--lavender); }
+    .action-btn.del:hover { color: #F28BA8; border-color: #F28BA8; }
+
+    input[type="checkbox"] {
+      accent-color: var(--pink);
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(22,17,42,0.88);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 30px;
+      width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 60px var(--glow-lav);
+    }
+
+    .modal-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 14px;
+    }
+
+    .modal-title span { color: var(--pink); }
+
+    .field-label {
+      font-size: 10px;
+      color: var(--muted);
+      margin-bottom: 5px;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .modal-input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 9px 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .modal-input:focus {
+      border-color: var(--pink);
+      box-shadow: 0 0 0 3px var(--glow-pink);
+    }
+
+    textarea.modal-input { resize: vertical; min-height: 90px; }
+    select.modal-input { font-family: 'JetBrains Mono', monospace; font-size: 12px; cursor: pointer; }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+
+    .modal-btn {
+      border-radius: 7px;
+      padding: 8px 18px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      transition: all 0.15s;
+    }
+
+    .modal-btn:hover { color: var(--text); border-color: var(--lavender); }
+
+    .modal-btn.confirm {
+      background: linear-gradient(135deg, var(--pink), var(--lavender));
+      border: none;
+      color: #16112A;
+    }
+
+    .modal-btn.confirm:hover { opacity: 0.88; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 80px;
+      color: var(--muted);
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .empty-state .icon { font-size: 32px; margin-bottom: 6px; opacity: 0.5; }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">minami<span>.</span>admin</div>
+    <div class="auth-subtitle">// restricted access — authorized personnel only</div>
+    <input class="auth-input" type="password" id="auth-input" placeholder="enter admin password..." />
+    <button class="auth-btn" onclick="authenticate()">ACCESS ↵</button>
+    <div class="auth-error" id="auth-error">// incorrect password — access denied</div>
+  </div>
+</div>
+
+<!-- Main App -->
+<div id="main">
+
+  <!-- Title Bar -->
+  <div class="title-bar">
+    <div class="title-left">
+      <div class="title-logo">minami<span>.</span>admin</div>
+      <div class="title-tag">memory manager</div>
+    </div>
+    <div class="title-right" id="summary-text"></div>
+  </div>
+
+  <!-- Tab Bar -->
+  <div class="tab-bar">
+    <div class="tab"><span>◈</span> memories.db</div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <select class="toolbar-input" id="user-select" onchange="onUserChange()">
+      <option value="">loading users...</option>
+    </select>
+    <div class="toolbar-sep"></div>
+    <input class="toolbar-input wide" type="text" id="search-input" placeholder="// search memories..." oninput="applyFilters()" />
+    <select class="toolbar-input" id="filter-type" onchange="applyFilters()">
+      <option value="">all types</option>
+      <option value="user_fact">user_fact</option>
+      <option value="minami_memory">minami_memory</option>
+    </select>
+    <select class="toolbar-input" id="filter-importance" onchange="applyFilters()">
+      <option value="">all importance</option>
+      <option value="5">★★★★★ permanent</option>
+      <option value="4">★★★★ long-term</option>
+      <option value="3">★★★ medium</option>
+      <option value="2">★★ short</option>
+      <option value="1">★ ephemeral</option>
+    </select>
+    <select class="toolbar-input" id="sort-by" onchange="applyFilters()">
+      <option value="importance">sort: importance</option>
+      <option value="created_at">sort: date</option>
+      <option value="type">sort: type</option>
+    </select>
+    <div class="toolbar-sep"></div>
+    <button class="toolbar-btn primary" onclick="openAddModal()">+ add memory</button>
+    <button class="toolbar-btn" onclick="selectAll()">select all</button>
+    <button class="toolbar-btn" onclick="clearSelection()">clear</button>
+    <button class="toolbar-btn danger" onclick="bulkDelete()" id="bulk-delete-btn" style="display:none">delete (<span id="selected-count">0</span>)</button>
+    <button class="toolbar-btn" onclick="bulkImportance()" id="bulk-imp-btn" style="display:none">set importance</button>
+    <div class="summary" id="filter-summary"></div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:36px"><input type="checkbox" id="select-all-cb" onchange="toggleSelectAll(this.checked)" /></th>
+          <th>content</th>
+          <th class="sortable" onclick="setSort('importance')">importance</th>
+          <th class="sortable" onclick="setSort('type')">type</th>
+          <th class="sortable" onclick="setSort('created_at')">established</th>
+          <th>expires</th>
+          <th>actions</th>
+        </tr>
+      </thead>
+      <tbody id="memory-tbody"></tbody>
+    </table>
+    <div class="empty-state" id="empty-state" style="display:none">
+      <div class="icon">✦</div>
+      <span>// no memories found</span>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="memory-modal">
+  <div class="modal">
+    <div class="modal-title"><span>◈</span> <span id="modal-title-text">add memory</span></div>
+    <div>
+      <div class="field-label">content</div>
+      <textarea class="modal-input" id="modal-content" placeholder="enter memory content..."></textarea>
+    </div>
+    <div>
+      <div class="field-label">importance</div>
+      <select class="modal-input" id="modal-importance">
+        <option value="5">5 — permanent (never expires)</option>
+        <option value="4">4 — long-term (90 days)</option>
+        <option value="3" selected>3 — medium (7 days)</option>
+        <option value="2">2 — short-term (6 hours)</option>
+        <option value="1">1 — ephemeral (1 hour)</option>
+      </select>
+    </div>
+    <div>
+      <div class="field-label">type</div>
+      <select class="modal-input" id="modal-type">
+        <option value="user_fact">user_fact — about the user</option>
+        <option value="minami_memory">minami_memory — minami's own memory</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeModal()">cancel</button>
+      <button class="modal-btn confirm" onclick="saveMemory()">SAVE ↵</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let adminPassword = ''
+  let allMemories = []
+  let filteredMemories = []
+  let selectedIds = new Set()
+  let editingId = null
+  let currentUserId = 1
+
+  document.getElementById('auth-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') authenticate()
+  })
+
+  async function authenticate() {
+    const pw = document.getElementById('auth-input').value
+    const res = await fetch('/api/admin/memories?user_id=1', {
+      headers: { 'x-admin-password': pw }
+    })
+    if (res.ok) {
+      adminPassword = pw
+      document.getElementById('auth-screen').style.display = 'none'
+      document.getElementById('main').style.display = 'flex'
+      await loadUsers()
+      loadMemories()
+    } else {
+      document.getElementById('auth-error').style.display = 'block'
+      document.getElementById('auth-input').value = ''
+    }
+  }
+
+  async function loadUsers() {
+    const res = await fetch('/api/admin/users', {
+      headers: { 'x-admin-password': adminPassword }
+    })
+    const data = await res.json()
+    const select = document.getElementById('user-select')
+    select.innerHTML = data.users.map(u =>
+      `<option value="${u.id}">${u.username} (${u.role})</option>`
+    ).join('')
+    currentUserId = data.users[0]?.id || 1
+    select.value = currentUserId
+  }
+
+  function onUserChange() {
+    currentUserId = parseInt(document.getElementById('user-select').value)
+    selectedIds.clear()
+    updateBulkButtons()
+    loadMemories()
+  }
+
+  async function loadMemories() {
+    const res = await fetch(`/api/admin/memories?user_id=${currentUserId}`, {
+      headers: { 'x-admin-password': adminPassword }
+    })
+    const data = await res.json()
+    allMemories = data.memories
+    applyFilters()
+    updateSummary()
+  }
+
+  function applyFilters() {
+    const search = document.getElementById('search-input').value.toLowerCase()
+    const type = document.getElementById('filter-type').value
+    const importance = document.getElementById('filter-importance').value
+    const sortBy = document.getElementById('sort-by').value
+
+    filteredMemories = allMemories.filter(m => {
+      if (search && !m.content.toLowerCase().includes(search)) return false
+      if (type && m.type !== type) return false
+      if (importance && m.importance !== parseInt(importance)) return false
+      return true
+    })
+
+    filteredMemories.sort((a, b) => {
+      if (sortBy === 'importance') return b.importance - a.importance
+      if (sortBy === 'created_at') return new Date(b.created_at) - new Date(a.created_at)
+      if (sortBy === 'type') return a.type.localeCompare(b.type)
+      return 0
+    })
+
+    renderTable()
+    document.getElementById('filter-summary').textContent =
+      `showing ${filteredMemories.length} of ${allMemories.length}`
+  }
+
+  function setSort(field) {
+    document.getElementById('sort-by').value = field
+    applyFilters()
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('memory-tbody')
+    const empty = document.getElementById('empty-state')
+
+    if (filteredMemories.length === 0) {
+      tbody.innerHTML = ''
+      empty.style.display = 'flex'
+      return
+    }
+
+    empty.style.display = 'none'
+    tbody.innerHTML = filteredMemories.map(m => {
+      const isSelected = selectedIds.has(m.id)
+      return `
+        <tr class="${isSelected ? 'selected' : ''}" onclick="toggleRow(${m.id}, event)">
+          <td><input type="checkbox" ${isSelected ? 'checked' : ''} onchange="toggleSelect(${m.id})" /></td>
+          <td class="content-cell">${escHtml(m.content)}</td>
+          <td><span class="importance-badge imp-${m.importance}">${m.importance}</span></td>
+          <td><span class="type-badge type-${m.type}">${m.type}</span></td>
+          <td class="date-cell">${formatDate(m.created_at)}</td>
+          <td class="${m.expires_at === null ? 'expires-never' : isExpiringSoon(m.expires_at) ? 'expires-soon' : 'expires-normal'}">${formatExpires(m.expires_at)}</td>
+          <td>
+            <button class="action-btn" onclick="openEditModal(${m.id});event.stopPropagation()">edit</button>
+            <button class="action-btn del" onclick="deleteSingle(${m.id});event.stopPropagation()">delete</button>
+          </td>
+        </tr>
+      `
+    }).join('')
+  }
+
+  function updateSummary() {
+    const permanent = allMemories.filter(m => m.expires_at === null).length
+    const userFacts = allMemories.filter(m => m.type === 'user_fact').length
+    const minamiMems = allMemories.filter(m => m.type === 'minami_memory').length
+    document.getElementById('summary-text').textContent =
+      `total: ${allMemories.length} | permanent: ${permanent} | user_facts: ${userFacts} | minami_memories: ${minamiMems}`
+  }
+
+  function toggleSelect(id) {
+    if (selectedIds.has(id)) selectedIds.delete(id)
+    else selectedIds.add(id)
+    updateBulkButtons()
+    renderTable()
+  }
+
+  function toggleRow(id, event) {
+    if (event.target.tagName === 'BUTTON' || event.target.tagName === 'INPUT') return
+    toggleSelect(id)
+  }
+
+  function toggleSelectAll(checked) {
+    if (checked) filteredMemories.forEach(m => selectedIds.add(m.id))
+    else selectedIds.clear()
+    updateBulkButtons()
+    renderTable()
+  }
+
+  function selectAll() {
+    filteredMemories.forEach(m => selectedIds.add(m.id))
+    document.getElementById('select-all-cb').checked = true
+    updateBulkButtons()
+    renderTable()
+  }
+
+  function clearSelection() {
+    selectedIds.clear()
+    document.getElementById('select-all-cb').checked = false
+    updateBulkButtons()
+    renderTable()
+  }
+
+  function updateBulkButtons() {
+    const count = selectedIds.size
+    document.getElementById('selected-count').textContent = count
+    document.getElementById('bulk-delete-btn').style.display = count > 0 ? '' : 'none'
+    document.getElementById('bulk-imp-btn').style.display = count > 0 ? '' : 'none'
+  }
+
+  function openAddModal() {
+    editingId = null
+    document.getElementById('modal-title-text').textContent = 'add memory'
+    document.getElementById('modal-content').value = ''
+    document.getElementById('modal-importance').value = '3'
+    document.getElementById('modal-type').value = 'user_fact'
+    document.getElementById('memory-modal').classList.add('open')
+  }
+
+  function openEditModal(id) {
+    const m = allMemories.find(x => x.id === id)
+    if (!m) return
+    editingId = id
+    document.getElementById('modal-title-text').textContent = 'edit memory'
+    document.getElementById('modal-content').value = m.content
+    document.getElementById('modal-importance').value = m.importance
+    document.getElementById('modal-type').value = m.type
+    document.getElementById('memory-modal').classList.add('open')
+  }
+
+  function closeModal() {
+    document.getElementById('memory-modal').classList.remove('open')
+    editingId = null
+  }
+
+  async function saveMemory() {
+    const content = document.getElementById('modal-content').value.trim()
+    const importance = parseInt(document.getElementById('modal-importance').value)
+    const type = document.getElementById('modal-type').value
+    if (!content) return
+
+    if (editingId) {
+      await fetch(`/api/admin/memories/${editingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+        body: JSON.stringify({ content, importance, type })
+      })
+    } else {
+      await fetch('/api/admin/memories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+        body: JSON.stringify({ content, importance, type, user_id: currentUserId })
+      })
+    }
+
+    closeModal()
+    await loadMemories()
+  }
+
+  async function deleteSingle(id) {
+    if (!confirm('Delete this memory?')) return
+    await fetch('/api/admin/memories', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ ids: [id] })
+    })
+    selectedIds.delete(id)
+    await loadMemories()
+  }
+
+  async function bulkDelete() {
+    const ids = [...selectedIds]
+    if (!ids.length) return
+    if (!confirm(`Delete ${ids.length} memories?`)) return
+    await fetch('/api/admin/memories', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+      body: JSON.stringify({ ids })
+    })
+    selectedIds.clear()
+    updateBulkButtons()
+    await loadMemories()
+  }
+
+  async function bulkImportance() {
+    const ids = [...selectedIds]
+    if (!ids.length) return
+    const val = prompt('Set importance (1-5) for selected memories:')
+    const importance = parseInt(val)
+    if (isNaN(importance) || importance < 1 || importance > 5) return
+    for (const id of ids) {
+      const m = allMemories.find(x => x.id === id)
+      if (!m) continue
+      await fetch(`/api/admin/memories/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-password': adminPassword },
+        body: JSON.stringify({ content: m.content, importance, type: m.type })
+      })
+    }
+    selectedIds.clear()
+    updateBulkButtons()
+    await loadMemories()
+  }
+
+  function formatDate(str) {
+    if (!str) return '—'
+    const d = new Date(str)
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  function formatExpires(str) {
+    if (!str) return '✦ never'
+    const d = new Date(str)
+    const now = new Date()
+    const diff = d - now
+    if (diff < 0) return 'expired'
+    if (diff < 3600000) return `${Math.floor(diff/60000)}m`
+    if (diff < 86400000) return `${Math.floor(diff/3600000)}h`
+    return `${Math.floor(diff/86400000)}d`
+  }
+
+  function isExpiringSoon(str) {
+    if (!str) return false
+    return new Date(str) - new Date() < 86400000
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  }
+
+  document.getElementById('memory-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal()
+  })
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeModal()
+  })
+</script>
+</body>
+</html>
