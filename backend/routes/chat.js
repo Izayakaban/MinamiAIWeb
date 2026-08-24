@@ -114,7 +114,7 @@ const extractAndSaveMemories = async (userId, userMessage, assistantReply, exist
             : 'Nothing known yet.';
 
         const extractionResponse = await groq.chat.completions.create({
-            model: 'llama-3.1-8b-instant',
+            model: 'openai/gpt-oss-20b',
             messages: [
                 { role: 'system', content: MEMORY_EXTRACTION_PROMPT },
                 {
@@ -122,12 +122,31 @@ const extractAndSaveMemories = async (userId, userMessage, assistantReply, exist
                     content: `${existingText}\n\nUser said: "${userMessage}"\nMinami replied: "${assistantReply}"\n\nWhat should be remembered?`
                 }
             ],
-            max_tokens: 400
+            max_tokens: 1200,
+            temperature: 0.3,
+            reasoning_effort: 'low'
         });
 
-        const raw = extractionResponse.choices[0].message.content.trim()
-        const cleaned = raw.replace(/```json|```/g, '').trim()
-        const newMemories = JSON.parse(cleaned)
+        const choice = extractionResponse.choices[0];
+        const raw = (choice.message.content || '').trim();
+
+        if (!raw) {
+            console.warn('Memory extraction returned empty content. finish_reason:', choice.finish_reason);
+            return;
+        }
+
+        let cleaned = raw.replace(/```json|```/g, '').trim();
+
+        // Isolate the array in case the model wraps it in prose
+        const start = cleaned.indexOf('[');
+        const end = cleaned.lastIndexOf(']');
+        if (start === -1 || end === -1) {
+            console.warn('No JSON array found in extraction output:', cleaned.slice(0, 200));
+            return;
+        }
+        cleaned = cleaned.slice(start, end + 1);
+
+        const newMemories = JSON.parse(cleaned);
 
         if (!Array.isArray(newMemories) || newMemories.length === 0) return;
 
@@ -198,12 +217,13 @@ router.post('/message', authMiddleware, async (req, res) => {
         }));
 
         const response = await groq.chat.completions.create({
-            model: 'llama-3.1-8b-instant',
+            model: 'openai/gpt-oss-20b',
             messages: [
                 { role: 'system', content: SYSTEM_PROMPT + memoryBlock },
                 ...history
             ],
-            max_tokens: 300
+            max_tokens: 800,
+            reasoning_effort: 'low'
         });
 
         const reply = response.choices[0].message.content;
