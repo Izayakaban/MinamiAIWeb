@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 import authRoutes from './routes/auth.js';
 import chatRoutes from './routes/chat.js';
 import pool from './db/db.js';
@@ -14,8 +15,38 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-app.use(cors());
+// Required for correct client IP detection behind Render/Vercel proxies
+app.set('trust proxy', 1);
+
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173'
+}));
 app.use(express.json());
+
+// Rate limits — protects Groq and ElevenLabs quota on the public demo
+const chatLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Demo limit reached. Clone the repo to run your own Minami.' }
+});
+
+const ttsLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 15,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Voice limit reached for this hour.' }
+});
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many attempts. Try again shortly.' }
+});
 
 pool.query("SELECT NOW()", (err, res) => {
     if (err) {
@@ -25,8 +56,9 @@ pool.query("SELECT NOW()", (err, res) => {
     }
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/chat', chatRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/chat/tts', ttsLimiter);
+app.use('/api/chat', chatLimiter, chatRoutes);
 
 app.get('/', (req, res) => {
     res.json({ message: 'MinamiAI backend is running' });
