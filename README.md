@@ -20,7 +20,7 @@ Log in with the demo account:
 
 ## What it does
 
-- **Talks back.** Responses stream through Groq, then get spoken aloud via ElevenLabs text-to-speech.
+- **Talks back.** Responses stream through Groq, then get spoken aloud via FishAudio text-to-speech.
 - **Remembers you.** A background extraction pass scores what's worth keeping on a 1 to 5 importance scale. A five never expires; a one is gone in an hour. Memories persist across sessions and shape how Minami responds later.
 - **Animates in real time.** A commissioned Live2D model rendered with PixiJS, with mouse tracking and lip sync driven by live audio analysis rather than a fixed timer.
 - **Has a personality.** Minami is sarcastic, obsessed with movies, and pretends to hate explaining code while thoroughly explaining code.
@@ -31,7 +31,7 @@ Log in with the demo account:
 **Backend:** Node.js, Express, JWT auth, bcrypt
 **Database:** PostgreSQL
 **AI:** Groq (`openai/gpt-oss-20b`)
-**Voice:** ElevenLabs (`eleven_turbo_v2_5`)
+**Voice:** FishAudio
 **Hosting:** Vercel (frontend), Render (backend), Neon (database)
 
 ## How it's put together
@@ -44,7 +44,7 @@ Memory extraction runs as a fire-and-forget call after the response is already s
 
 ## Running it locally
 
-You'll need Node 18+, PostgreSQL, and API keys from Groq and ElevenLabs.
+You'll need Node 18+, PostgreSQL, and API keys from Groq and FishAudio.
 
 ```bash
 git clone https://github.com/Izayakaban/MinamiAIWeb.git
@@ -70,7 +70,8 @@ Create `backend/.env`:
 ```
 DATABASE_URL=postgres://user:password@localhost:5432/minamidb
 GROQ_API_KEY=your_key
-ELEVENLABS_API_KEY=your_key
+FISH_API_KEY=your_key
+FISH_REFERENCE_ID=voice_model_id
 JWT_SECRET=any_long_random_string
 ADMIN_PASSWORD=your_admin_password
 FRONTEND_URL=http://localhost:5173
