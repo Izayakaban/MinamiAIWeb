@@ -104,11 +104,17 @@ Open `http://localhost:5173` and register an account.
 
 A password-protected interface at `/admin` on the backend gives full CRUD over stored memories, with filtering, bulk delete, and a user switcher. Useful for watching what the extraction system decides is worth keeping.
 
+## Credits
+
+**Live2D Art & Rigging: [xiaojing](https://www.fiverr.com/s2/092fcca7f3?utm_source=CopyLink_Mobile)**
+
+The Minami model you see in the demo was hand-drawn and rigged by xiaojing. Beyond the illustration itself, they went out of their way to rig the model with this project's needs in mind, separating every parameter, mouth shapes, physics, and more, individually so the animation and lip-sync systems could hook into each one cleanly. That extra care is a big part of why the real-time, audio-driven lip sync in this project works as well as it does.
+
+The Live2D model is a commissioned asset and is not covered by this repository's MIT license.
+
 ## Notes
 
 The demo account is shared, so memories from one visitor are visible to the next. That's a quirk of the public demo, not the design.
-
-The Live2D model is a commissioned asset and is not covered by this repository's license.
 
 ## License
 
