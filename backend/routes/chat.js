@@ -257,37 +257,35 @@ router.get('/history/:conversation_id', authMiddleware, async (req, res) => {
     }
 });
 
-// TTS endpoint
+// TTS endpoint (Fish Audio)
 router.post('/tts', authMiddleware, async (req, res) => {
   const { text } = req.body
   try {
     const response = await fetch(
-      'https://api.elevenlabs.io/v1/text-to-speech/pNInz6obpgDQGcFmaJgB',
+      'https://api.fish.audio/v1/tts',
       {
         method: 'POST',
         headers: {
-          'xi-api-key': process.env.ELEVENLABS_API_KEY,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${process.env.FISH_API_KEY}`,
+          'Content-Type': 'application/json',
+          'model': 's2.1-pro-free'
         },
         body: JSON.stringify({
           text,
-          model_id: 'eleven_turbo_v2_5',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75
-          }
+          reference_id: process.env.FISH_REFERENCE_ID,
+          format: 'wav'
         })
       }
     )
     const audioBuffer = await response.arrayBuffer()
-    console.log('ElevenLabs response status:', response.status)
+    console.log('Fish Audio response status:', response.status)
     console.log('Audio buffer size:', audioBuffer.byteLength)
     if (!response.ok) {
       const errorText = Buffer.from(audioBuffer).toString('utf8')
-      console.log('ElevenLabs error:', errorText)
+      console.log('Fish Audio error:', errorText)
       return res.status(500).json({ error: 'TTS failed' })
     }
-    res.set('Content-Type', 'audio/mpeg')
+    res.set('Content-Type', 'audio/wav')
     res.send(Buffer.from(audioBuffer))
   } catch (err) {
     console.error(err)
