@@ -96,6 +96,14 @@ const getExpiresAt = (importance) => {
     }
 };
 
+// Strip characters that read awkwardly out loud, e.g. "*" being spoken as "asterisk"
+const sanitizeForSpeech = (text) => {
+    return text
+        .replace(/\*/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+};
+
 const fetchMemories = async (userId) => {
     const result = await pool.query(
         `SELECT content, importance, type FROM memories 
@@ -260,6 +268,7 @@ router.get('/history/:conversation_id', authMiddleware, async (req, res) => {
 // TTS endpoint (Fish Audio)
 router.post('/tts', authMiddleware, async (req, res) => {
   const { text } = req.body
+  const cleanText = sanitizeForSpeech(text)
   try {
     const response = await fetch(
       'https://api.fish.audio/v1/tts',
@@ -271,7 +280,7 @@ router.post('/tts', authMiddleware, async (req, res) => {
           'model': 's2.1-pro-free'
         },
         body: JSON.stringify({
-          text,
+          text: cleanText,
           reference_id: process.env.FISH_REFERENCE_ID,
           format: 'wav'
         })
