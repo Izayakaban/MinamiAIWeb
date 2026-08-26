@@ -16,7 +16,7 @@ Log in with the demo account:
 
 ---
 
-![Minami](docs/screenshot.png)
+![Minami](docs/minamiScreenshot.png)
 
 ## What it does
 
