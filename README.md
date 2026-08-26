@@ -1,4 +1,4 @@
-# MinamiAI
+# MinamiAI 🎀
 
 An AI VTuber companion in the browser. Minami is a Live2D character who talks back, remembers you across sessions, and has opinions about movies.
 
