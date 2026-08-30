@@ -303,6 +303,7 @@ function ChatPage({ username, token, onLogout }) {
           right: 0;
           top: 0;
           height: 100vh;
+          height: 100dvh;
           width: 420px;
           display: flex;
           flex-direction: column;

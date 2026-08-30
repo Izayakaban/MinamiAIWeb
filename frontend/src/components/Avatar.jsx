@@ -7,18 +7,27 @@ window.PIXI = PIXI
 const BASE_HEIGHT = 969
 const BASE_SCALE = 0.44
 
+const getViewportSize = () => {
+  if (window.visualViewport) {
+    return { width: window.visualViewport.width, height: window.visualViewport.height }
+  }
+  return { width: window.innerWidth, height: window.innerHeight }
+}
+
 function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
   const canvasRef = useRef(null)
   const appRef = useRef(null)
 
   useEffect(() => {
     const timer = setTimeout(async () => {
+      const { width: vw, height: vh } = getViewportSize()
+
       const app = new PIXI.Application({
         view: canvasRef.current,
         autoStart: true,
         backgroundAlpha: 0,
-        width: window.innerWidth,
-        height: window.innerHeight,
+        width: vw,
+        height: vh,
         resolution: Math.min(window.devicePixelRatio || 1, 2),
         autoDensity: true,
       })
@@ -50,7 +59,8 @@ function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
 
       layoutModel()
 
-      const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
+      const { width: initW, height: initH } = getViewportSize()
+      const mouse = { x: initW / 2, y: initH / 2 }
       const handleMouseMove = (e) => {
         mouse.x = e.clientX
         mouse.y = e.clientY
@@ -66,10 +76,14 @@ function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
       window.addEventListener('touchmove', handleTouchMove, { passive: true })
 
       const handleResize = () => {
-        app.renderer.resize(window.innerWidth, window.innerHeight)
+        const { width, height } = getViewportSize()
+        app.renderer.resize(width, height)
         layoutModel()
       }
       window.addEventListener('resize', handleResize)
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', handleResize)
+      }
 
       let t = 0
       app.ticker.add(() => {
@@ -82,8 +96,8 @@ function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
         const modelCenterX = model.x + model.width / 2
         const modelCenterY = model.y + model.height * 0.15
 
-        const dx = (mouse.x - modelCenterX) / (window.innerWidth / 2)
-        const dy = (mouse.y - modelCenterY) / (window.innerHeight / 2)
+        const dx = (mouse.x - modelCenterX) / (app.screen.width / 2)
+        const dy = (mouse.y - modelCenterY) / (app.screen.height / 2)
 
         const clamp = (v, min, max) => Math.max(min, Math.min(max, v))
         const lerp = (current, target, factor) => current + (target - current) * factor
@@ -127,6 +141,9 @@ function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
       }
       if (appRef.current?._resizeHandler) {
         window.removeEventListener('resize', appRef.current._resizeHandler)
+        if (window.visualViewport) {
+          window.visualViewport.removeEventListener('resize', appRef.current._resizeHandler)
+        }
       }
       if (appRef.current) appRef.current.destroy(true)
     }
