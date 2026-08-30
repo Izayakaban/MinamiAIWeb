@@ -203,10 +203,6 @@ function ChatPage({ username, token, onLogout }) {
       }
       const audio = new Audio(url)
       audioRef.current = audio
-
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
-      }
       const source = audioContextRef.current.createMediaElementSource(audio)
       const analyser = audioContextRef.current.createAnalyser()
       analyser.fftSize = 256
@@ -241,7 +237,10 @@ function ChatPage({ username, token, onLogout }) {
       }
 
       setIsSpeaking(true)
-      audio.play()
+      audio.play().catch(err => {
+        console.error('Playback blocked:', err)
+        setIsSpeaking(false)
+      })
       updateMouth()
 
     } catch (err) {
@@ -253,6 +252,15 @@ function ChatPage({ username, token, onLogout }) {
 
   const sendMessage = async () => {
     if (!input.trim() || !conversationId) return
+
+  
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+    }
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume()
+    }
+
     const userMessage = input
     setInput('')
     setMessages(prev => [...prev, { role: 'user', content: userMessage }])
@@ -266,24 +274,24 @@ function ChatPage({ username, token, onLogout }) {
       const reply = res.data.reply
       setMessages(prev => [...prev, { role: 'assistant', content: reply }])
       await playTTS(reply)
-    } catch (err) {
-      console.error(err)
-      triggerError()
+      }   catch (err) {
+        console.error(err)
+        triggerError()
+      }
+      setLoading(false)
     }
-    setLoading(false)
-  }
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') sendMessage()
-  }
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') sendMessage()
+    }
 
-  const statusConfig = {
-    online: { color: '#F2A7C3', border: 'rgba(242,167,195,0.3)', bg: 'rgba(242,167,195,0.08)', label: 'online' },
-    error:  { color: '#FF6B6B', border: 'rgba(255,107,107,0.3)', bg: 'rgba(255,107,107,0.08)', label: 'error' },
-  }
-  const pill = statusConfig[status]
+    const statusConfig = {
+      online: { color: '#F2A7C3', border: 'rgba(242,167,195,0.3)', bg: 'rgba(242,167,195,0.08)', label: 'online' },
+      error:  { color: '#FF6B6B', border: 'rgba(255,107,107,0.3)', bg: 'rgba(255,107,107,0.08)', label: 'error' },
+    }
+    const pill = statusConfig[status]
 
-  return (
+    return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;500&display=swap');
@@ -307,6 +315,19 @@ function ChatPage({ username, token, onLogout }) {
           z-index: 10;
         }
         .chat-panel.open { transform: translateX(0); }
+
+          @media (max-width: 600px) {
+            .chat-panel {
+            width: 100%;
+          }
+          .chat-toggle.shifted {
+            right: 20px;
+          }
+          .corner-tr.shifted {
+            opacity: 0;
+            pointer-events: none;
+          }
+        }
 
         .tab-bar {
           display: flex;

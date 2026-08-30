@@ -4,21 +4,23 @@ import { Live2DModel } from 'pixi-live2d-display'
 
 window.PIXI = PIXI
 
+const BASE_HEIGHT = 969
+const BASE_SCALE = 0.44
+
 function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
   const canvasRef = useRef(null)
   const appRef = useRef(null)
 
   useEffect(() => {
     const timer = setTimeout(async () => {
-      const w = window.innerWidth
-      const h = window.innerHeight
-
       const app = new PIXI.Application({
         view: canvasRef.current,
         autoStart: true,
         backgroundAlpha: 0,
-        width: w,
-        height: h,
+        width: window.innerWidth,
+        height: window.innerHeight,
+        resolution: Math.min(window.devicePixelRatio || 1, 2),
+        autoDensity: true,
       })
 
       appRef.current = app
@@ -31,9 +33,22 @@ function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
         model.expression(`expression${num}`)
       }
 
-      model.scale.set(0.44)
-      model.x = (app.screen.width - model.width) / 2
-      model.y = app.screen.height - model.height * 0.35
+      const layoutModel = () => {
+        const scale = BASE_SCALE * (app.screen.height / BASE_HEIGHT)
+        model.scale.set(scale)
+
+        if (app.screen.width < 700) {
+          const maxWidth = app.screen.width * 0.9
+          if (model.width > maxWidth) {
+            model.scale.set(scale * (maxWidth / model.width))
+          }
+        }
+
+        model.x = (app.screen.width - model.width) / 2
+        model.y = app.screen.height - model.height * 0.35
+      }
+
+      layoutModel()
 
       const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 }
       const handleMouseMove = (e) => {
@@ -42,17 +57,30 @@ function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
       }
       window.addEventListener('mousemove', handleMouseMove)
 
+      const handleTouchMove = (e) => {
+        if (e.touches.length > 0) {
+          mouse.x = e.touches[0].clientX
+          mouse.y = e.touches[0].clientY
+        }
+      }
+      window.addEventListener('touchmove', handleTouchMove, { passive: true })
+
+      const handleResize = () => {
+        app.renderer.resize(window.innerWidth, window.innerHeight)
+        layoutModel()
+      }
+      window.addEventListener('resize', handleResize)
+
       let t = 0
       app.ticker.add(() => {
         t += 0.01
         const core = model.internalModel.coreModel
 
-        // Volume-driven mouth movement with per-frame smoothing
         const targetMouth = mouthLevelRef?.current || 0
         core.setParameterValueById('ParamMouthOpenY', targetMouth)
 
         const modelCenterX = model.x + model.width / 2
-        const modelCenterY = 350
+        const modelCenterY = model.y + model.height * 0.15
 
         const dx = (mouse.x - modelCenterX) / (window.innerWidth / 2)
         const dy = (mouse.y - modelCenterY) / (window.innerHeight / 2)
@@ -84,6 +112,8 @@ function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
       })
 
       app._mouseMoveHandler = handleMouseMove
+      app._touchMoveHandler = handleTouchMove
+      app._resizeHandler = handleResize
 
     }, 100)
 
@@ -91,6 +121,12 @@ function Avatar({ isSpeaking, modelRef, mouthLevelRef }) {
       clearTimeout(timer)
       if (appRef.current?._mouseMoveHandler) {
         window.removeEventListener('mousemove', appRef.current._mouseMoveHandler)
+      }
+      if (appRef.current?._touchMoveHandler) {
+        window.removeEventListener('touchmove', appRef.current._touchMoveHandler)
+      }
+      if (appRef.current?._resizeHandler) {
+        window.removeEventListener('resize', appRef.current._resizeHandler)
       }
       if (appRef.current) appRef.current.destroy(true)
     }
